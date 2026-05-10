@@ -1,0 +1,77 @@
+import type { CertLore } from '@certquest/types/src/lore-schemas';
+
+export const ccnaLore: CertLore = {
+  worldName: 'Router Kingdom',
+  userRole: 'CLI Dojo Apprentice',
+  tagline: 'Every command is a decree. Mistype one and the kingdom routes packets to the wrong continent.',
+  tone: 'Disciplined, dojo-like. Precision over speed. Repetition until reflex.',
+  mentor: {
+    name: 'Sensei Route',
+    title: 'Master of the CLI Dojo',
+    voice: 'Patient, exact, never lets a bad command pass without correction.',
+    catchphrase: 'Mode first. Command second. Always.',
+  },
+  rival: {
+    name: 'The Broadcast Storm',
+    title: 'The Loop That Cannot Be Stopped',
+    purpose: 'Forms when STP is misconfigured. Floods the kingdom with frames until the network drowns.',
+  },
+  regions: [
+    {
+      domainId: 'ccna-fund',
+      regionName: 'Subnet Dojo',
+      description: 'The training hall. Every apprentice learns wildcard masks and binary here, or they leave.',
+      threat: 'Wildcard masks confused with subnet masks. Off-by-one host counts.',
+      unlockMessage: 'Sensei Route hands you a worksheet. "Convert /27 to wildcard. You have ten seconds."',
+      completionMessage: 'You subnet on instinct. The Dojo bows.',
+    },
+    {
+      domainId: 'ccna-access',
+      regionName: 'VLAN Gate',
+      description: 'A guarded gate where every port carries a tag — or carries nothing at all.',
+      threat: 'Native VLAN mismatches. Trunks that drop the VLAN you need.',
+      unlockMessage: 'The Gate watches every packet. Configure the trunk wrong and the Storm gets in.',
+      completionMessage: 'Your trunks pass clean traffic. The Gate seals.',
+    },
+    {
+      domainId: 'ccna-ip',
+      regionName: 'OSPF Arena',
+      description: 'A grand arena where routes compete. Lowest cost wins. Lowest AD picks the protocol.',
+      threat: 'Confusing AD with metric. Static routes overriding dynamic paths by accident.',
+      unlockMessage: 'Sensei Route: "Show me your show ip route. We will discuss what we see."',
+      completionMessage: 'You read routing tables like sheet music. The Arena sings.',
+    },
+    {
+      domainId: 'ccna-services',
+      regionName: 'NAT Crossing',
+      description: 'A bridge between the inside and the outside. Every translation logged.',
+      threat: 'Inside/outside confusion. NAT pools too small. PAT exhaustion.',
+      unlockMessage: 'The Crossing requires you to know which interface is inside before you cross.',
+      completionMessage: 'You map private to public without hesitation. The Crossing opens.',
+    },
+    {
+      domainId: 'ccna-security',
+      regionName: 'ACL Wall',
+      description: 'A high wall of access control rules. Top-down. Implicit deny at the bottom.',
+      threat: 'Forgetting the implicit deny. Standard ACLs placed near source instead of destination.',
+      unlockMessage: 'The Wall is read top to bottom. Order matters. Always.',
+      completionMessage: 'Your ACLs let through what should pass and stop what should not. The Wall holds.',
+    },
+    {
+      domainId: 'ccna-auto',
+      regionName: 'Automation Forge',
+      description: 'A new wing of the dojo. APIs, JSON, YAML. The future of the CLI.',
+      threat: 'Manual configuration that does not scale. Hand-typed VLANs across 200 switches.',
+      unlockMessage: 'Sensei Route nods to the Forge. "The kingdom is growing. The CLI alone won\'t keep up."',
+      completionMessage: 'You speak REST and YAML. The Forge accepts you.',
+    },
+  ],
+  rankTitles: ['Apprentice', 'Disciple', 'Black Belt', 'Sensei Initiate', 'Sensei', 'Grandmaster', 'Kingdom Architect'],
+  dailyMessageTemplates: [
+    'Morning training. {nextLesson} is today\'s kata.',
+    'The Storm gathers near {weakDomain}. {dueReviews} drills before sparring.',
+    'Sensei Route: "{weakDomain} is your softest stance. Strengthen it."',
+    'Trial Readiness: {readiness}%. The {nextTrial} unlocks at 80%.',
+    'CLI sparring round open. Five commands. Five seconds each.',
+  ],
+};

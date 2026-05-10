@@ -1,0 +1,208 @@
+/**
+ * AWS Solutions Architect Associate (SAA-C03) — Architect Trials rich flashcards.
+ * Lore: cloud architect candidate mentored by Master Well-Arch.
+ *
+ * Sources cross-checked: AWS SAA-C03 official exam guide.
+ * Domains: Secure 30%, Resilient 26%, Performance 24%, Cost-Optimized 20%.
+ */
+
+import { rfc } from '../authoring-rich';
+import type { RichFlashcard } from '@certquest/types';
+
+const C = 'aws-saa';
+
+export const awsSaaRichFlashcards: RichFlashcard[] = [
+  rfc({
+    id: 'saa-rfc-001',
+    certId: C,
+    domainId: 'saa-resilient',
+    objectiveId: 'saa-obj-ha',
+    term: 'Multi-AZ vs Read Replicas (RDS)',
+    definition: 'Multi-AZ: synchronous standby in another AZ for high availability — automatic failover on primary failure, NOT used for read scaling. Read Replicas: asynchronous copies for offloading read traffic — can be in same region or different region, NOT automatically promoted on failure.',
+    whyItMatters: 'The most-mistaken pair on SAA. Architects who confuse them ship outages (replica thought to be HA) or waste money (Multi-AZ added to scale reads, doesn\'t help).',
+    memoryHook: 'Master Well-Arch: "Multi-AZ is the standby that wakes up. Read Replicas are the librarians that share the catalog." Standby = HA. Librarians = reads.',
+    commonTrap: 'Treating a Read Replica as a DR / HA solution. It is not — replicas can lag and don\'t auto-promote. For HA, use Multi-AZ. For DR across regions, use cross-region Read Replicas WITH a documented promotion procedure.',
+    example: 'An e-commerce database hits read bottlenecks during sales. Wrong: enable Multi-AZ (improves HA, no read scaling). Right: add 3 Read Replicas, point reporting/dashboard traffic at the replica endpoint. Keep Multi-AZ on for failover.',
+    examAngle: 'When the scenario mentions "automatic failover" or "minimize downtime if primary fails," the answer is Multi-AZ. When it mentions "offload read traffic" or "improve read performance," Read Replicas.',
+    tags: ['rds', 'multi-az', 'read-replica', 'ha'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'saa-rfc-002',
+    certId: C,
+    domainId: 'saa-resilient',
+    objectiveId: 'saa-obj-decoupling',
+    term: 'SQS vs SNS vs EventBridge',
+    definition: 'SQS: pull-based queue, point-to-point, decouples producer/consumer, retains messages up to 14 days. SNS: push-based pub/sub, fan-out to multiple subscribers (Lambda, SQS, HTTP, email). EventBridge: event bus with rich rule-based routing, schema registry, integration with SaaS partners and AWS services.',
+    whyItMatters: 'Picking the wrong messaging primitive means re-architecting later. SAA-C03 emphasizes loosely coupled designs; messaging is the spine of every loosely-coupled system.',
+    memoryHook: 'Master Well-Arch: "Queue waits. Topic shouts. Bus routes." SQS = patient queue. SNS = announcement (fan-out). EventBridge = traffic cop with rules.',
+    commonTrap: 'Reaching for SNS when fan-out to QUEUES is the right pattern. Best practice: SNS topic with multiple SQS subscriptions (the "fanout pattern") — gives you durable per-consumer queues with one publish.',
+    example: 'A new order arrives. Publish to an SNS topic. Subscribers: an SQS queue feeding the warehouse system, another SQS queue feeding billing, a Lambda that emails the customer, an EventBridge rule for analytics. One publish, four parallel consumers.',
+    examAngle: 'Scenario asks "decouple producers from consumers, durable storage" → SQS. "Notify multiple downstream systems of one event" → SNS. "Route events based on content rules" → EventBridge.',
+    tags: ['sqs', 'sns', 'eventbridge', 'decoupling'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'saa-rfc-003',
+    certId: C,
+    domainId: 'saa-perf',
+    objectiveId: 'saa-obj-storage',
+    term: 'EBS Volume Types Selection',
+    definition: 'gp3 (default): general purpose SSD, decoupled IOPS/throughput from size. gp2: older general purpose SSD, IOPS scales with size. io2 / io2 Block Express: provisioned IOPS SSD for I/O-intensive workloads (databases). st1: throughput-optimized HDD for big sequential workloads (data warehouse, log processing). sc1: cold HDD, infrequent access.',
+    whyItMatters: 'EBS volume choice is a top SAA topic and a recurring real-world cost optimization. gp3 is cheaper than gp2 for the same performance — many migrations save 20% just by switching.',
+    memoryHook: 'Master Well-Arch: "gp for general, io for IOPS, st for streaming, sc for cold." General → io → streaming → cold. Performance descends; cost descends.',
+    commonTrap: 'Sticking with gp2 because "it always worked." gp3 is the modern default — same performance floor, cheaper, IOPS doesn\'t depend on volume size. Migrate.',
+    example: 'A high-IOPS production database (PostgreSQL on EC2) needing 50,000 IOPS sustained. io2 Block Express. A general application server with light I/O — gp3. A data warehouse running large sequential scans — st1.',
+    examAngle: 'Question mentions "highest IOPS" or "sub-millisecond latency for databases" → io2. "Sequential throughput on big files" → st1. "General purpose, cost-effective" → gp3 (not gp2 anymore).',
+    tags: ['ebs', 'storage', 'performance'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'saa-rfc-004',
+    certId: C,
+    domainId: 'saa-secure',
+    objectiveId: 'saa-obj-iam-advanced',
+    term: 'IAM Policy Evaluation Logic',
+    definition: 'Default: implicit deny everything. Then: explicit deny ALWAYS wins. If no explicit deny, an explicit allow grants access. SCPs (Service Control Policies in Organizations) bound the maximum permissions. Permission boundaries cap user/role permissions. Resource-based policies (e.g., S3 bucket policy) can grant access independent of the principal\'s identity policy.',
+    whyItMatters: 'IAM evaluation order is the most-tested SAA security concept. Picking apart "why can this user not access X" requires walking the evaluation logic correctly.',
+    memoryHook: 'Master Well-Arch\'s rule: "Deny wins. Then ask if anything explicitly allows. Then check the boundaries." Deny > Allow > Implicit Deny. Boundaries cap the ceiling.',
+    commonTrap: 'Believing an explicit Allow on the user overrides a Deny on a SCP or permission boundary. It does NOT — boundaries set the maximum and Deny on any layer kills access regardless of Allows elsewhere.',
+    example: 'User has IAM policy allowing s3:* on bucket-X. SCP at the OU level denies s3:DeleteObject. User attempts DeleteObject → denied. Even though IAM allows it, SCP\'s deny wins.',
+    examAngle: 'Question scenario: user with seemingly correct IAM policy can\'t do an action. First check: explicit Deny somewhere (SCP, boundary, resource policy). Second: missing Allow on resource-based policy (cross-account).',
+    tags: ['iam', 'policy', 'security'],
+    difficulty: 'advanced',
+  }),
+
+  rfc({
+    id: 'saa-rfc-005',
+    certId: C,
+    domainId: 'saa-secure',
+    objectiveId: 'saa-obj-iam-advanced',
+    term: 'KMS Customer Master Key (CMK) Types',
+    definition: 'AWS managed keys: created and managed entirely by AWS for AWS services (e.g., aws/s3). You can\'t rotate or delete. Customer managed keys (CMKs): you create, control rotation, key policies, and CloudTrail audit. AWS-owned keys: not visible in your account, used internally by AWS services.',
+    whyItMatters: 'Compliance and audit requirements often demand customer-managed keys. Key access is the highest-impact lever in cloud security — anyone who controls the key controls the data.',
+    memoryHook: '"Owned by AWS, hidden from you. Managed by AWS, visible but read-only. Customer-managed, fully yours." Three flavors of "who holds the key."',
+    commonTrap: 'Choosing AWS-managed keys for compliance scenarios that require key rotation control or cross-account sharing. Those need customer-managed CMKs.',
+    example: 'A regulated industry (healthcare, financial) requires audit logs of every key use plus 1-year rotation. Customer-managed CMK with rotation enabled and CloudTrail logging. AWS-managed keys won\'t cut it — you can\'t see who used the key when.',
+    examAngle: 'Question mentions "rotate keys on schedule," "audit who used the key," or "share keys cross-account" → customer-managed CMK. Default S3 / EBS encryption with no specific compliance ask → AWS-managed is fine.',
+    tags: ['kms', 'encryption', 'security'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'saa-rfc-006',
+    certId: C,
+    domainId: 'saa-secure',
+    objectiveId: 'saa-obj-iam-advanced',
+    term: 'VPC Security: Security Groups vs NACLs',
+    definition: 'Security Group: stateful firewall on the ENI level (instance/Lambda/RDS). Allow rules only — implicit deny otherwise. Connection state tracked, return traffic auto-allowed. NACL (Network ACL): stateless firewall at the subnet level. Both allow AND deny rules, evaluated in order. Stateless — return traffic must be explicitly allowed.',
+    whyItMatters: 'SG and NACL together form VPC defense in depth. Misunderstanding stateful vs stateless causes the most common "why can\'t I connect?" debugging in AWS.',
+    memoryHook: 'Master Well-Arch: "Security Groups are like a smart bouncer — they remember who came in. NACLs are like a checklist — every packet checked, in and out." Smart = stateful. Checklist = stateless.',
+    commonTrap: 'Forgetting return-traffic ports on NACLs. If you allow inbound 443 to a web server, NACL outbound rules must allow ephemeral ports (1024–65535) for the response — Security Groups handle this automatically.',
+    example: 'A web server in a public subnet. SG: inbound 443 from 0.0.0.0/0; outbound default allow. NACL on the subnet: inbound 443 from 0.0.0.0/0 + ephemeral inbound for return; outbound 443 + ephemeral. Without ephemeral on NACL, replies are dropped.',
+    examAngle: 'Question contrasts SG and NACL. SG = stateful + ENI + allow only. NACL = stateless + subnet + allow/deny. The "stateful" word in the answer is usually the SG choice.',
+    tags: ['vpc', 'security-group', 'nacl', 'security'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'saa-rfc-007',
+    certId: C,
+    domainId: 'saa-perf',
+    objectiveId: 'saa-obj-storage',
+    term: 'CloudFront for Static and Dynamic Content',
+    definition: 'CloudFront is AWS\'s global CDN. Caches content at edge locations, reduces origin load, lowers latency for users worldwide. Origins can be S3, ALB, EC2, or any HTTP source. Supports signed URLs/cookies, AWS WAF integration, Lambda@Edge for request manipulation, custom SSL certs, and field-level encryption.',
+    whyItMatters: 'Performance and cost optimization questions on SAA-C03 frequently reduce to "use CloudFront." Egress from S3 directly is expensive; egress from CloudFront edge is cheaper AND faster for end users.',
+    memoryHook: 'CloudFront = "the cloud\'s front door." Users never hit your origin directly — they hit the edge cache, which fetches from origin only if needed.',
+    commonTrap: 'Believing CloudFront only caches static content. It can cache dynamic responses too (with appropriate cache keys and TTLs) and can pass through uncacheable requests while still terminating TLS at the edge for performance.',
+    example: 'A global media site serves video catalogs from S3 and an API from ALB. Without CloudFront: every request hits us-east-1; APAC users see 200ms+. With CloudFront: edge locations cache, APAC users see <50ms; egress costs drop because origin requests reduce dramatically.',
+    examAngle: 'Question mentions "global users," "reduce latency for international users," or "lower data transfer costs" → CloudFront. Question mentions "geographic restriction" → CloudFront geo-restriction.',
+    tags: ['cloudfront', 'cdn', 'performance'],
+    difficulty: 'beginner',
+  }),
+
+  rfc({
+    id: 'saa-rfc-008',
+    certId: C,
+    domainId: 'saa-perf',
+    objectiveId: 'saa-obj-storage',
+    term: 'Aurora vs RDS vs DynamoDB',
+    definition: 'RDS: managed relational (MySQL, PostgreSQL, Maria, Oracle, SQL Server). Aurora: AWS-built MySQL/PostgreSQL-compatible engine, distributed storage, 5x MySQL throughput, auto-scaling storage to 128 TiB, global database. DynamoDB: serverless NoSQL, single-digit millisecond latency, virtually unlimited scale, key-value/document model.',
+    whyItMatters: 'Picking the wrong database type is the most expensive architectural mistake. SAA-C03 has many "best database for this workload" scenarios; the matchup is recall plus reasoning.',
+    memoryHook: 'RDS = "Relational Database Standard." Aurora = "RDS turbocharged for MySQL/PostgreSQL only." DynamoDB = "Documents and Key-value, Massive scale."',
+    commonTrap: 'Picking DynamoDB because "it scales." If the data is highly relational with complex joins, DynamoDB makes the application team rebuild query logic in code. Use it for known access patterns and high-write workloads.',
+    example: 'An IoT platform with 100k devices each writing telemetry every 10 seconds — DynamoDB (high write rate, simple key access). A traditional ERP with complex multi-table joins — Aurora (PostgreSQL-compatible, scales storage). A read-heavy analytics dashboard — Aurora with replicas, or Redshift.',
+    examAngle: 'Question mentions "single-digit millisecond at any scale" → DynamoDB. "MySQL/PostgreSQL-compatible at high throughput" → Aurora. "Lift and shift Oracle" → RDS for Oracle.',
+    tags: ['database', 'rds', 'aurora', 'dynamodb'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'saa-rfc-009',
+    certId: C,
+    domainId: 'saa-cost',
+    objectiveId: 'saa-obj-storage',
+    term: 'S3 Cost Optimization Patterns',
+    definition: 'Lifecycle policies move objects between classes automatically. Intelligent-Tiering optimizes for unknown access patterns. S3 Storage Lens reveals usage patterns. S3 Inventory provides flat file of bucket contents for analysis. Requester Pays bills the requester for downloads. Multi-region duplication should use Cross-Region Replication selectively, not blanket.',
+    whyItMatters: 'S3 is most teams\' biggest line item after EC2. SAA-C03 asks "how do you minimize storage cost while meeting durability/access SLAs"; the answer is almost always lifecycle + class selection.',
+    memoryHook: 'Cost-optimization triangle: "Move it (lifecycle), measure it (Storage Lens), or charge for it (Requester Pays)."',
+    commonTrap: 'Enabling Cross-Region Replication on entire buckets when only a subset needs cross-region copies. CRR doubles storage cost; scope it with prefix or tag filters.',
+    example: 'A logs bucket grows 1 TB/month. Lifecycle: Standard for 30 days, Standard-IA for 90 days, Glacier Flexible for 2 years, Deep Archive thereafter. After 1 year of logs at $0.023/GB → $230/mo on Standard becomes ~$10/mo on Deep Archive.',
+    examAngle: 'Cost-optimization scenario for S3 → answer is "lifecycle policy" or "Intelligent-Tiering." Question contrasts known vs unknown access patterns: known → lifecycle with explicit transitions, unknown → Intelligent-Tiering.',
+    tags: ['s3', 'cost-optimization', 'lifecycle'],
+    difficulty: 'intermediate',
+  }),
+
+  // --- Cost-Optimized domain additions (saa-cost) ---
+
+  rfc({
+    id: 'saa-rfc-011',
+    certId: C,
+    domainId: 'saa-cost',
+    objectiveId: 'saa-obj-storage',
+    term: 'EC2 Cost Optimization: Savings Plans vs Reserved Instances',
+    definition: 'Savings Plans: flexible commitment to a spend level ($/hr) for 1 or 3 years. Compute Savings Plans apply across instance family, region, OS, and tenancy (most flexible). EC2 Instance Savings Plans apply to a specific family in a region. Reserved Instances: commit to a specific instance type/region; Standard RIs offer deepest discount (~72%); Convertible RIs allow swaps at ~54% discount.',
+    whyItMatters: 'SAA-C03 Cost Optimization domain frequently asks which purchase model maximizes savings given a workload description. Picking on-demand for steady workloads is the most expensive mistake architects make.',
+    memoryHook: 'Master Well-Arch: "Savings Plans = flexible wallet. Reserved Instances = locked-in contract. Spot = auction house — cheapest but evictable." Steady + predictable → RI or Savings Plan. Interruptible → Spot.',
+    commonTrap: 'Assuming Savings Plans always beat Reserved Instances. For a single fixed instance type running 24/7 for 3 years, a Standard Reserved Instance (All Upfront) still offers the maximum discount. Savings Plans win when instance flexibility matters.',
+    example: 'A microservices platform runs variable instance families as they scale. Compute Savings Plan covers all families and regions → maximum flexibility with ~66% savings. A legacy monolith always runs on m5.2xlarge in us-east-1 → Standard RI All Upfront for deepest savings on that fixed footprint.',
+    examAngle: 'Question mentions "flexibility across instance families / regions" → Savings Plans. "Single instance type locked in, maximum discount" → Standard Reserved Instance All Upfront. "Interruptible batch" → Spot. "On-demand" = no commitment = most expensive baseline.',
+    tags: ['ec2', 'savings-plans', 'reserved-instances', 'cost-optimization'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'saa-rfc-012',
+    certId: C,
+    domainId: 'saa-cost',
+    objectiveId: 'saa-obj-storage',
+    term: 'Cost Allocation Tags and AWS Organizations for FinOps',
+    definition: 'Cost allocation tags label AWS resources (e.g., Team=Backend, Environment=Prod, Project=AlphaLaunch). After activation in Billing, they appear in Cost Explorer and CUR reports for per-team or per-project cost attribution. AWS Organizations consolidates billing across accounts; master account pays, member accounts have individual limits, and SCPs control what members can provision.',
+    whyItMatters: 'SAA-C03 FinOps questions test whether architects can design cost visibility at scale. A multi-team platform without cost allocation tags produces a single bill no one can decompose — every team blames someone else.',
+    memoryHook: 'Master Well-Arch: "Tags are receipts. Organizations are the accounting firm. Without tags, you have a pile of receipts. Without Organizations, every team has their own credit card." Both together = FinOps.',
+    commonTrap: 'Creating tags but forgetting to activate them as cost allocation tags in the Billing Console. Tags exist on resources but don\'t appear in Cost Explorer until activated. This two-step requirement trips architects who assume tagging is sufficient.',
+    example: 'A startup has 15 teams sharing one AWS account. Finance cannot tell which team generated $40,000 in EC2 costs last month. Solution: implement cost allocation tags (Team=, Environment=, Project=) on all resources, activate them in Billing, and use Cost Explorer cost categories to report per-team. Consider separate accounts per team in AWS Organizations for stronger isolation.',
+    examAngle: 'Question asks "how to attribute costs to specific teams" → cost allocation tags + Cost Explorer. "How to consolidate billing across multiple accounts" → AWS Organizations. "Prevent one account from over-provisioning" → SCP in Organizations.',
+    tags: ['cost-allocation', 'organizations', 'finops', 'cost-optimization'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'saa-rfc-010',
+    certId: C,
+    domainId: 'saa-resilient',
+    objectiveId: 'saa-obj-ha',
+    term: 'Disaster Recovery Strategies (RPO / RTO)',
+    definition: 'Four AWS DR strategies, ascending in cost and decreasing in RTO/RPO: Backup & Restore (hours-to-days RTO/RPO, cheapest); Pilot Light (minimal version always running, scale up on disaster); Warm Standby (scaled-down full environment always running); Multi-Site Active/Active (full capacity in both regions, near-zero RTO/RPO).',
+    whyItMatters: 'DR strategy selection is a recurring SAA scenario. Picking too aggressive wastes money; picking too lax loses the business when the region fails.',
+    memoryHook: 'Master Well-Arch: "Backup + Restore is the sleeping copy. Pilot Light is the lit candle. Warm Standby is the running engine. Active/Active is two of everything." Cost climbs each rung; RTO/RPO falls each rung.',
+    commonTrap: 'Confusing RPO with RTO. RPO = how much DATA loss is acceptable (last backup point). RTO = how much DOWNTIME is acceptable. They\'re different SLOs that often need different strategies.',
+    example: 'A small business: RPO 24h / RTO 4h → Pilot Light. Mid-size SaaS: RPO 5min / RTO 1h → Warm Standby with cross-region replication. Banking with regulatory zero-downtime requirement → Active/Active multi-region.',
+    examAngle: 'Question gives RTO/RPO numbers and asks the strategy. Match the column: hours = Backup/Restore, low minutes = Pilot Light, single-digit minutes = Warm Standby, near-zero = Active/Active.',
+    tags: ['dr', 'rpo', 'rto', 'resilience'],
+    difficulty: 'intermediate',
+  }),
+];

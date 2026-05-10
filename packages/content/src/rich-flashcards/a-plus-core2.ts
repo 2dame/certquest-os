@@ -1,0 +1,208 @@
+/**
+ * A+ Core 2 (220-1202) — Field Support Order rich flashcards.
+ * Lore: field support operative, mentored by Agent Patch.
+ *
+ * Sources cross-checked: CompTIA A+ 220-1202 V15 official objectives v3.0.
+ * Domains: OS 28%, Security 28%, Software Trbl 23%, Operational 21%.
+ */
+
+import { rfc } from '../authoring-rich';
+import type { RichFlashcard } from '@certquest/types';
+
+const C = 'a-plus-core2';
+
+export const aPlusCore2RichFlashcards: RichFlashcard[] = [
+  rfc({
+    id: 'aplus-c2-rfc-001',
+    certId: C,
+    domainId: 'aplus-c2-security',
+    objectiveId: 'aplus-c2-obj-malware',
+    term: 'CompTIA Seven-Step Malware Removal Procedure',
+    definition: 'Investigate and verify malware symptoms; quarantine the infected system; disable System Restore (Windows); remediate (update antimalware, scan, remove); schedule scans and run updates; enable System Restore and create a fresh restore point; educate the end user.',
+    whyItMatters: 'CompTIA tests this exact order more than any other procedure on Core 2. Skip a step and the malware can persist or re-infect from a tainted restore point.',
+    memoryHook: 'Agent Patch: "Investigate, Isolate, Disable Restore, Remediate, Schedule, Re-enable, Educate." Mantra: "I-I-D-R-S-R-E" — "I Identify, I Disable, Remediate, Schedule, Restore, Educate."',
+    commonTrap: 'Forgetting to disable System Restore BEFORE remediation. If you scan and clean while restore points exist, the malware lives on in the snapshots and reinstalls itself.',
+    example: 'A user clicked a phishing link and now their browser is hijacked. Step 1 verify (yes — redirects on every search). Step 2 unplug network. Step 3 disable System Restore. Step 4 boot to safe mode and run Defender + Malwarebytes. Step 5 schedule weekly scan. Step 6 re-enable System Restore, create a clean point. Step 7 walk them through how to spot phishing.',
+    examAngle: 'When the question asks "what is the FIRST step?" the answer is "investigate/verify symptoms." When it asks "what step do techs commonly skip?" — disable System Restore. When it asks the LAST step — educate the end user.',
+    tags: ['malware', 'security', 'procedure'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'aplus-c2-rfc-002',
+    certId: C,
+    domainId: 'aplus-c2-security',
+    objectiveId: 'aplus-c2-obj-social-eng',
+    term: 'Phishing vs Spear Phishing vs Whaling',
+    definition: 'Phishing: mass-broadcast deceptive message hoping a small percentage clicks. Spear phishing: targeted at a specific individual or small group with personalized details. Whaling: spear phishing aimed specifically at high-value executives (the "whales").',
+    whyItMatters: 'Real-world: 90% of breaches start with one of these. Knowing which kind hit your org changes the response — broad phishing is technical (filters), spear/whaling is procedural (training, dual-control).',
+    memoryHook: 'Phishing = "throw a wide net." Spear = "aim at one fish you can see." Whaling = "hunt the biggest one in the ocean" (the CEO).',
+    commonTrap: 'Calling all targeted attacks "phishing." The exam distinguishes precisely. If the message names the victim by role and references a real project, it\'s spear phishing — not generic phishing.',
+    example: 'An email to the CFO that references the Q3 board meeting by date and asks for a wire transfer to a "vendor" the CFO mentioned in last week\'s call. That\'s whaling. Lock down wire transfer approval to dual-signature regardless of email source.',
+    examAngle: 'Question mentions C-suite or executive target → whaling. Specific named victim with personal details → spear phishing. Generic "Dear Customer" mass mail → phishing.',
+    tags: ['phishing', 'social-engineering', 'security'],
+    difficulty: 'beginner',
+  }),
+
+  rfc({
+    id: 'aplus-c2-rfc-003',
+    certId: C,
+    domainId: 'aplus-c2-os',
+    objectiveId: 'aplus-c2-obj-windows-cli',
+    term: 'sfc /scannow vs DISM /RestoreHealth',
+    definition: 'sfc /scannow scans and repairs Windows system files using a local cache. DISM /Online /Cleanup-Image /RestoreHealth repairs the underlying component store that sfc draws from, pulling sources from Windows Update if needed.',
+    whyItMatters: 'When sfc reports "could not repair," the cache itself is corrupted. Running DISM first replenishes the cache; then sfc can succeed. Knowing the order saves a reinstall.',
+    memoryHook: 'Agent Patch: "DISM heals the well; sfc draws the water." If sfc fails, the well is poisoned — fix the well first.',
+    commonTrap: 'Running them in the wrong order or assuming sfc will fix everything. If sfc says "cannot repair," your next step is DISM /RestoreHealth, then sfc again.',
+    example: 'Windows behaves erratically; sfc /scannow returns "Windows Resource Protection found corrupt files but was unable to fix some of them." Run: DISM /Online /Cleanup-Image /RestoreHealth (10–20 min, needs internet). Then re-run sfc /scannow. Both should now report success.',
+    examAngle: 'If the question shows sfc failing with "unable to fix," the next step is DISM. If it shows healthy DISM but sfc still fails, the next step is in-place repair install. Order matters on the exam.',
+    tags: ['windows', 'cli', 'troubleshooting'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'aplus-c2-rfc-004',
+    certId: C,
+    domainId: 'aplus-c2-security',
+    objectiveId: 'aplus-c2-obj-malware',
+    term: 'Ransomware Response Pattern',
+    definition: 'Isolate the host from the network immediately (pull cable / disable Wi-Fi). Do not reboot — memory may contain decryption keys for forensics. Identify the strain via ID Ransomware or vendor portals. Restore from offline backup. Report to law enforcement (FBI IC3 in the US). Patch the entry vector before reconnecting any restored host.',
+    whyItMatters: 'Ransomware is the most-cited threat in modern A+ exam scenarios. The exam expects the textbook procedure even when real-world responses sometimes differ.',
+    memoryHook: 'Agent Patch\'s ransomware mantra: "Isolate. Do not reboot. Identify. Restore offline. Report. Patch the door." Six beats — IDIRRP — "I Don\'t Reboot, Restore, Report, Patch."',
+    commonTrap: 'Paying the ransom or rebooting "to see if it goes away." Both are exam-wrong. Reboot can erase memory-resident keys; payment funds the next attack and rarely yields working keys.',
+    example: 'User reports ".lockbit" extensions on every file in their OneDrive folder. Action: physically disconnect their laptop from the network. Don\'t reboot. Pull last night\'s offline backup (the cloud sync may also be infected). Identify strain via ID Ransomware. Report. Image the laptop for forensics, then rebuild.',
+    examAngle: 'On any ransomware scenario, the FIRST action is always "disconnect / isolate from network." Never "pay the ransom." Never "reboot."',
+    tags: ['ransomware', 'incident-response', 'security'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'aplus-c2-rfc-005',
+    certId: C,
+    domainId: 'aplus-c2-security',
+    objectiveId: 'aplus-c2-obj-social-eng',
+    term: 'MFA Factors and Passwordless Authentication',
+    definition: 'Multi-factor authentication combines two or more of: something you know (password/PIN), something you have (token, phone, smart card), something you are (biometric), somewhere you are (geolocation), something you do (typing rhythm). Passwordless replaces "know" entirely with "have + are" (e.g., Windows Hello, FIDO2 keys).',
+    whyItMatters: 'V15 explicitly adds passwordless authentication and modern MFA factors. Misconfiguring MFA with two factors of the same category (PIN + password) is still "1FA" and fails security audits.',
+    memoryHook: 'Five categories: Know, Have, Are, Are-where, Do. Mnemonic: "Knowledge, Possession, Inherence, Location, Behavior." On the cert: focus on the first three.',
+    commonTrap: 'Counting "PIN + password" as MFA. Both are "something you know" — that\'s still single-factor. True MFA requires two DIFFERENT categories.',
+    example: 'A user logs in with their domain password (know) and approves a push notification on their phone (have). Two categories — true MFA. Adding a fingerprint at the laptop level (are) makes it 3FA.',
+    examAngle: 'When the question lists two factors, classify each into a category. If both are in the same category, the answer is "still single-factor" or "not true MFA." The exam loves this trap.',
+    tags: ['mfa', 'authentication', 'security'],
+    difficulty: 'beginner',
+  }),
+
+  rfc({
+    id: 'aplus-c2-rfc-006',
+    certId: C,
+    domainId: 'aplus-c2-os',
+    objectiveId: 'aplus-c2-obj-windows-tools',
+    term: 'NTFS vs ReFS vs FAT32 vs exFAT',
+    definition: 'NTFS: default Windows volume FS — permissions, journaling, encryption, compression, max ~256 TB. ReFS (Resilient FS): Windows Server / Win 11 Pro for Workstations — checksums, integrity streams, very large volumes; lacks some NTFS features. FAT32: legacy, max 4 GB file / 32 GB volume in Windows formatter, universally compatible. exFAT: modern flash drive FS, no 4 GB limit, broad cross-OS support.',
+    whyItMatters: 'V15 explicitly added ReFS to objectives. Picking the wrong FS for external media (FAT32 on a 64 GB stick → 4 GB file fails) is a top help desk mistake.',
+    memoryHook: 'NTFS = "Native To FileServers." ReFS = "Resilient — for FS that must self-heal." FAT32 = "Forty-Two-or-fewer-Bytes" in file-size joke (4 GB cap). exFAT = "Expanded FAT" — no 4 GB cap.',
+    commonTrap: 'Formatting a USB drive as FAT32 to "be compatible" then having a 5 GB video file refuse to copy. Use exFAT for cross-platform large files.',
+    example: 'User wants to share 8 GB ISO files via USB drive between Windows and macOS. NTFS = Windows write/Mac read-only. FAT32 = 4 GB cap blocks the ISO. Answer: exFAT — full read/write both sides, no size cap.',
+    examAngle: 'If the question mentions "checksums" or "integrity," the answer is ReFS. If "cross-platform large files," exFAT. If "Windows permissions," NTFS. If "legacy / boot partitions on old systems," FAT32.',
+    tags: ['filesystem', 'windows', 'storage'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'aplus-c2-rfc-007',
+    certId: C,
+    domainId: 'aplus-c2-os',
+    objectiveId: 'aplus-c2-obj-windows-cli',
+    term: 'gpupdate /force vs gpresult /r',
+    definition: 'gpupdate /force re-applies all Group Policy settings on the local machine, ignoring cached state. gpresult /r shows the resultant set of policy currently applied to the user/computer — what the GP engine actually decided after merging.',
+    whyItMatters: 'When a user complains "the new policy didn\'t take effect," these two commands are step one and step two of every diagnosis. Without them you\'re guessing.',
+    memoryHook: 'gpupdate = "Go Push the Update." gpresult = "Go Print the Result." Push, then Print.',
+    commonTrap: 'Running gpupdate then assuming everything took effect. Some settings (logon scripts, certain user policies) require sign-out / restart. The /r in gpresult tells you what actually applied.',
+    example: 'IT pushes a new screen-lock policy. User says "still 30 minutes, not 10." Run gpupdate /force on the workstation; have user sign out and back in. Run gpresult /r — confirm the screen-lock GPO appears in the applied list. If it doesn\'t, check security filtering on the GPO.',
+    examAngle: 'When the scenario mentions "policy not applied," the first step is gpupdate /force. When it mentions "verify which policy is in effect," the answer is gpresult /r.',
+    tags: ['windows', 'cli', 'group-policy'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'aplus-c2-rfc-008',
+    certId: C,
+    domainId: 'aplus-c2-ops',
+    objectiveId: 'aplus-c2-obj-change-mgmt',
+    term: 'Change Management Process Components',
+    definition: 'Documented business reason; scope of the change; risk analysis; affected systems and users; backout/rollback plan; test plan; approvals (CAB or designated approver); scheduled maintenance window; communication to stakeholders; post-change documentation.',
+    whyItMatters: 'Real outages happen because someone "just made a quick change." Change management is the most-tested operational topic on V15 because it prevents those outages.',
+    memoryHook: 'Agent Patch: "Reason, Risk, Rollback, Review, Roll-out." The five Rs of change. If you can\'t articulate all five before pressing Enter, you\'re not ready.',
+    commonTrap: 'Treating the rollback plan as optional. Every change must have one — even "rebooting the server" needs a documented "if it doesn\'t come back up, do X."',
+    example: 'Updating a domain controller. Reason: critical CVE patch. Risk: replication may break during reboot. Rollback: VM snapshot before patch; restore if AD replication fails post-reboot. Review: CAB approval logged. Schedule: Saturday 2 AM. Comms: email to ops + on-call.',
+    examAngle: 'The exam asks "which of the following is part of change management?" — every answer EXCEPT "calling the user mid-change to ask permission" is correct. The trick is identifying the non-process answer.',
+    tags: ['change-management', 'operations', 'procedure'],
+    difficulty: 'beginner',
+  }),
+
+  rfc({
+    id: 'aplus-c2-rfc-009',
+    certId: C,
+    domainId: 'aplus-c2-security',
+    objectiveId: 'aplus-c2-obj-social-eng',
+    term: 'Zero Trust Principles',
+    definition: 'Never trust, always verify. No implicit trust based on network location. Authenticate and authorize every request. Use least-privilege access. Assume breach. Continuously validate identity, device posture, and request context.',
+    whyItMatters: 'V15 explicitly adds Zero Trust to objectives. The traditional perimeter is gone — work-from-home, BYOD, and SaaS broke the castle-and-moat model. Zero Trust is the new default mental model.',
+    memoryHook: 'Five-word summary: "Verify Every Time, From Anywhere." Or shorter: "trust nothing — verify everything."',
+    commonTrap: 'Confusing Zero Trust with VPN. VPN extends the perimeter; Zero Trust eliminates the concept of a trusted perimeter. They\'re philosophically opposite even though they can coexist.',
+    example: 'A remote user on home Wi-Fi accesses a company SharePoint site. Zero Trust check: who is the user (MFA), what is the device posture (compliant, encrypted, patched), what are they requesting (this specific file), is this consistent with their role (yes/no, allow or block).',
+    examAngle: 'If the question mentions "implicit trust," the answer eliminates it (Zero Trust principle). If it lists "internal network is safe," that contradicts Zero Trust. The right answer always restricts trust to per-request verification.',
+    tags: ['zero-trust', 'security', 'modern-security'],
+    difficulty: 'intermediate',
+  }),
+
+  // --- Software Troubleshooting domain additions (aplus-c2-software) ---
+
+  rfc({
+    id: 'aplus-c2-rfc-011',
+    certId: C,
+    domainId: 'aplus-c2-software',
+    objectiveId: 'aplus-c2-obj-windows-tools',
+    term: 'Windows BSOD (Blue Screen of Death) Analysis',
+    definition: 'A BSOD (Stop Error) halts Windows and displays a stop code (e.g., MEMORY_MANAGEMENT, DRIVER_IRQL_NOT_LESS_OR_EQUAL, PAGE_FAULT_IN_NONPAGED_AREA, CRITICAL_PROCESS_DIED). The minidump file at C:\\Windows\\Minidump can be analyzed with WinDbg or the online stop-code database to identify the offending driver or hardware.',
+    whyItMatters: 'A+ Core 2 V15 tests stop-code recognition in software troubleshooting scenarios. Identifying the category of BSOD (driver, memory, storage) drives the correct next step without guessing.',
+    memoryHook: 'Agent Patch: "BSOD = Bug Screaming Out Details. Read the stop code — it names the category. IRQL → driver. MEMORY_MANAGEMENT → RAM. PAGE_FAULT → disk or RAM. CRITICAL_PROCESS → OS corruption."',
+    commonTrap: 'Immediately replacing hardware after one BSOD. A single random BSOD often means a driver update or Windows Update caused the issue. Check Event Viewer System log and minidump first — hardware is the last suspect, not the first.',
+    example: 'A user\'s PC BSOD\'d twice after a graphics driver update with "VIDEO_TDR_FAILURE." Action: boot to safe mode, roll back the display driver in Device Manager, check for an updated stable driver from the GPU vendor, verify GPU temperatures.',
+    examAngle: 'Stop code contains "DRIVER" or "IRQL" → bad or incompatible driver. Contains "MEMORY" or "PAGE_FAULT" → RAM or disk failing (run MemTest86, chkdsk). "CRITICAL_PROCESS_DIED" → OS file corruption (run sfc /scannow then DISM).',
+    tags: ['bsod', 'windows', 'troubleshooting', 'software'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'aplus-c2-rfc-012',
+    certId: C,
+    domainId: 'aplus-c2-software',
+    objectiveId: 'aplus-c2-obj-windows-tools',
+    term: 'Application Crashes: Event Viewer and Crash Dumps',
+    definition: 'Application crashes write entries to Event Viewer (eventvwr.msc) → Windows Logs → Application. Each entry shows the faulting module, exception code, and timestamp. Full application crash dumps appear in %LocalAppData%\\CrashDumps. Common exception codes: 0xC0000005 (access violation), 0xC000007B (invalid image format — 32/64-bit mismatch), 0x80000003 (breakpoint from Debug build).',
+    whyItMatters: 'A+ Core 2 explicitly tests application crash troubleshooting. Event Viewer is the first-line diagnostic — it turns a vague "app keeps crashing" complaint into a specific faulting module that can be researched or reinstalled.',
+    memoryHook: 'Agent Patch: "eventvwr.msc is the crash diary. Application log → Application errors → faulting module. If the module is a DLL you don\'t recognize, look it up — it\'s either a driver, a redistributable, or malware."',
+    commonTrap: 'Reinstalling the application without reading the Event Viewer log. 90% of the time, the crash is caused by a missing or corrupted Visual C++ redistributable, .NET runtime, or a conflicting DLL — not the app itself. Install the dependency first.',
+    example: 'A user reports "Adobe Premiere crashes on launch." Event Viewer shows faulting module: VCRUNTIME140.DLL, exception code 0xC0000005. Action: download and install the latest Visual C++ 2015-2022 x64 redistributable from Microsoft. App launches clean.',
+    examAngle: 'Scenario: app crashes every time it starts with no error message → check Event Viewer Application log first. "0xC000007B" on startup → 32/64-bit mismatch (wrong redistributable). Faulting module is a DLL → missing runtime or corrupted install.',
+    tags: ['crash', 'event-viewer', 'windows', 'software-troubleshooting'],
+    difficulty: 'intermediate',
+  }),
+
+  rfc({
+    id: 'aplus-c2-rfc-010',
+    certId: C,
+    domainId: 'aplus-c2-os',
+    objectiveId: 'aplus-c2-obj-windows-tools',
+    term: 'BitLocker vs EFS',
+    definition: 'BitLocker: full-volume encryption tied to a TPM (or USB key / passphrase). Protects an entire drive at rest, including the OS. EFS (Encrypting File System): per-file/folder encryption using a user\'s key — only files marked encrypted are protected, and only against other users.',
+    whyItMatters: 'Choosing wrong leaks data. Laptop stolen with BitLocker off but EFS on a single folder? The thief can access most files. With BitLocker on, even pulling the disk and mounting it elsewhere is useless without the key.',
+    memoryHook: 'BitLocker = "Bit-by-bit, the whole Locker." EFS = "Encrypt File-by-file, Selectively."',
+    commonTrap: 'Believing EFS protects against physical theft. It doesn\'t — anyone who logs in as that user (or recovers their password) gets the files. Only BitLocker protects against someone pulling the drive.',
+    example: 'Sales laptop traveling to conferences. Threat: device theft. Solution: BitLocker on the system drive with TPM + PIN. EFS on a "highly sensitive" folder adds a second layer for files that should be unreadable even by other admins on the device.',
+    examAngle: 'Theft / lost-laptop scenario → BitLocker. Multi-user shared workstation where one user wants files private from another → EFS. The exam writes scenarios to make one fit and the other plainly wrong.',
+    tags: ['encryption', 'bitlocker', 'efs', 'security'],
+    difficulty: 'intermediate',
+  }),
+];

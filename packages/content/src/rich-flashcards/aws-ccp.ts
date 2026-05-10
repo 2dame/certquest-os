@@ -1,0 +1,175 @@
+/**
+ * AWS Cloud Practitioner (CLF-C02) — Cloud Village rich flashcards.
+ * Lore: cloud initiate mentored by Sage Nimbus.
+ *
+ * Sources cross-checked: AWS Certified Cloud Practitioner (CLF-C02) official
+ * exam guide. Domains: Cloud Concepts 24%, Security 30%, Tech & Services 34%,
+ * Billing/Pricing/Support 12%.
+ */
+
+import { rfc } from '../authoring-rich';
+import type { RichFlashcard } from '@certquest/types';
+
+const C = 'aws-ccp';
+
+export const awsCcpRichFlashcards: RichFlashcard[] = [
+  rfc({
+    id: 'ccp-rfc-001',
+    certId: C,
+    domainId: 'ccp-security',
+    objectiveId: 'ccp-obj-shared-resp',
+    term: 'AWS Shared Responsibility Model',
+    definition: 'AWS is responsible for security OF the cloud (physical data centers, hardware, hypervisors, managed-service infrastructure, networking fabric). The customer is responsible for security IN the cloud (data, identity/access, OS patching where applicable, network/firewall configuration, encryption settings, application code).',
+    whyItMatters: 'This is the most-tested concept on the entire CCP exam. Every security question on the test reduces to "is this an AWS responsibility or a customer responsibility?"',
+    memoryHook: 'Sage Nimbus: "AWS guards the village walls. You guard your house inside the village." OF = walls (AWS). IN = houses (you). Same village, different doors.',
+    commonTrap: 'Believing AWS handles all encryption automatically. AWS provides the tools (KMS, S3 encryption, EBS encryption) but the customer must turn them on and configure them. Default-on varies by service.',
+    example: 'A misconfigured S3 bucket exposes customer PII. AWS\'s side: data centers were secure, the storage hardware worked. Customer\'s side: failed to set bucket policies and encryption — customer\'s responsibility, customer\'s breach.',
+    examAngle: 'For each service, learn which side does what. Lambda: AWS does runtime + OS; you do code + IAM. EC2: AWS does hypervisor + hardware; you do guest OS + apps + firewalls. RDS: AWS does engine + OS patching; you do schemas + access.',
+    tags: ['shared-responsibility', 'security'],
+    difficulty: 'beginner',
+  }),
+
+  rfc({
+    id: 'ccp-rfc-002',
+    certId: C,
+    domainId: 'ccp-security',
+    objectiveId: 'ccp-obj-iam',
+    term: 'IAM Users, Groups, Roles, and Policies',
+    definition: 'User: long-term identity for a person or service (with credentials). Group: collection of users; permissions granted to the group apply to members. Role: temporary identity assumed by users, services, or external accounts (no long-term creds). Policy: JSON document defining what actions on what resources are allowed/denied.',
+    whyItMatters: 'IAM is the security foundation of AWS. Every other service depends on it. Misunderstanding the four pieces causes the most preventable AWS security failures.',
+    memoryHook: 'Sage Nimbus: "Users are people. Groups are clubs. Roles are costumes. Policies are the rule book." Costumes (roles) can be put on and taken off; clubs (groups) are stable membership.',
+    commonTrap: 'Attaching policies directly to individual users at scale. Best practice: attach policies to groups, put users in groups. Direct user attachment doesn\'t scale and creates audit nightmares.',
+    example: 'An EC2 instance needs to read from S3. Wrong: hard-code AWS access keys in the instance. Right: create an IAM Role with S3 read permission, attach to the instance via instance profile. The instance gets temporary credentials automatically — no secrets to leak.',
+    examAngle: 'When the question asks "how should an EC2 instance access S3?" the answer is always "IAM role attached to the instance" — never "access keys" or "user credentials."',
+    tags: ['iam', 'security'],
+    difficulty: 'beginner',
+  }),
+
+  rfc({
+    id: 'ccp-rfc-003',
+    certId: C,
+    domainId: 'ccp-tech',
+    objectiveId: 'ccp-obj-core-services',
+    term: 'AWS Global Infrastructure (Region, AZ, Edge)',
+    definition: 'Region: geographic area (e.g., us-east-1) containing multiple isolated Availability Zones. AZ: one or more discrete data centers with redundant power, networking, and connectivity, separated by meaningful distance from other AZs in the region. Edge Location: caching/POP for CloudFront/Route 53/Global Accelerator, far more numerous than regions.',
+    whyItMatters: 'Picking the right Region affects latency, cost, and compliance. Multi-AZ is the foundation of high availability on AWS. Edge locations are how content delivery scales globally.',
+    memoryHook: 'Region = "country." AZ = "data centers in that country, miles apart." Edge = "convenience stores everywhere." Big to small: Region → AZ → Edge.',
+    commonTrap: 'Confusing AZ with data center. An AZ may contain multiple data centers. AZs in the same region are physically separate (typically tens of km apart) but networked with low-latency links.',
+    example: 'A US-East-1 deployment with EC2 in us-east-1a only is single-AZ — survives instance failure but not AZ failure. Adding an Auto Scaling group across us-east-1a, 1b, 1c gives multi-AZ HA. Adding CloudFront with edge locations gives global low latency for static assets.',
+    examAngle: 'Question mentions "high availability within a region" → multi-AZ. "Disaster recovery across geographic distance" → multi-region. "Reduce latency for global users" → CloudFront edge locations.',
+    tags: ['regions', 'availability-zones', 'global-infrastructure'],
+    difficulty: 'beginner',
+  }),
+
+  rfc({
+    id: 'ccp-rfc-004',
+    certId: C,
+    domainId: 'ccp-billing',
+    objectiveId: 'ccp-obj-pricing',
+    term: 'EC2 Pricing Models',
+    definition: 'On-Demand: pay per second, no commitment, highest cost. Reserved Instances (1 or 3 year): up to 72% discount, locked to instance attributes. Savings Plans: flexible commitment to compute spend ($/hour), applies across EC2/Fargate/Lambda. Spot: up to 90% off but interruptible with 2-min notice. Dedicated Hosts: physical server dedicated to you (compliance).',
+    whyItMatters: 'Pricing is 12% of the exam but 100% of the cloud bill. Knowing which model fits which workload is the most career-relevant CCP topic.',
+    memoryHook: 'Match workload to model: "Predictable steady state = Reserved/Savings Plan. Unpredictable bursty = On-Demand. Fault-tolerant batch = Spot. Compliance/licensing = Dedicated Host."',
+    commonTrap: 'Recommending Spot for production web servers. Spot can be reclaimed in 2 minutes — fine for batch processing, image rendering, or worker pools, fatal for live traffic without robust failover.',
+    example: 'A 24/7 production database fronted by RDS in steady state. Reserved Instance (3-year, all upfront) — biggest savings. A nightly ETL batch job. Spot — runs cheaply, restarts if interrupted. A flash-sale website during launch week. On-Demand — you don\'t know the load yet.',
+    examAngle: 'Memorize the matchup table: steady → RI/SP, variable predictable → SP, batch/fault-tolerant → Spot, compliance → Dedicated Host. The exam scenario will name the workload pattern; pick the matching model.',
+    tags: ['ec2', 'pricing', 'billing'],
+    difficulty: 'beginner',
+  }),
+
+  rfc({
+    id: 'ccp-rfc-005',
+    certId: C,
+    domainId: 'ccp-billing',
+    objectiveId: 'ccp-obj-pricing',
+    term: 'AWS Support Plans',
+    definition: 'Basic (free): 24/7 access to docs, forums, and AWS Health Dashboard. Developer ($29/mo+): business-hours email support, 12-hour response on impaired systems. Business ($100/mo+): 24/7 phone/chat, 1-hour response for production-down, full Trusted Advisor checks, Support API. Enterprise On-Ramp / Enterprise: 15-minute response for business-critical, dedicated TAM (Enterprise), concierge.',
+    whyItMatters: 'Support plan choice is a recurring exam topic and a real-world cost optimization. Picking Enterprise when Business will do wastes thousands per month; picking Basic for production wastes a weekend during an outage.',
+    memoryHook: 'Tiers ascend: "Basic Documents only. Developer Develops on weekdays. Business runs Production. Enterprise has a TAM." Four tiers, four scopes.',
+    commonTrap: 'Believing all tiers get the full Trusted Advisor. Only Business and Enterprise tiers unlock all checks — Basic and Developer get only the seven core security/limit checks.',
+    example: 'A startup running a production e-commerce site needs 24/7 phone support and a 1-hour response when the site goes down. Business tier ($100/mo + usage). They do not need a dedicated TAM yet — Enterprise would be over-provisioned.',
+    examAngle: 'Question mentions "TAM" or "Technical Account Manager" → Enterprise. "1-hour response for production" → Business. "12-hour response, weekdays only" → Developer. "Forums and docs only" → Basic.',
+    tags: ['support', 'pricing'],
+    difficulty: 'beginner',
+  }),
+
+  rfc({
+    id: 'ccp-rfc-006',
+    certId: C,
+    domainId: 'ccp-tech',
+    objectiveId: 'ccp-obj-core-services',
+    term: 'S3 Storage Classes',
+    definition: 'S3 Standard: frequent access, multi-AZ. Standard-IA: infrequent access, lower storage cost, retrieval fee. One Zone-IA: single AZ, cheaper but less durable. Intelligent-Tiering: auto-moves objects across tiers based on access pattern. Glacier Instant: minutes retrieval, archive pricing. Glacier Flexible: minutes-to-hours. Glacier Deep Archive: 12-hour retrieval, cheapest.',
+    whyItMatters: 'Storage is the largest line item for many AWS bills. Picking the wrong class costs 10x; lifecycle policies that move data automatically are core CCP knowledge.',
+    memoryHook: 'Climb a ladder by access frequency: "Hot Standard → Cool IA → Frozen Glacier → Deep Frozen Glacier." Higher = warmer + costlier per GB. Lower = colder + slower retrieval.',
+    commonTrap: 'Recommending Glacier Deep Archive for "cheap storage" without checking retrieval needs. Deep Archive takes 12 hours and charges per retrieval — fine for compliance archives, terrible for "occasional reads."',
+    example: 'Application logs: 30 days hot (Standard), 90 days warm (Standard-IA), 7 years compliance archive (Glacier Deep Archive). Build this with one lifecycle policy on the bucket — fully automatic.',
+    examAngle: 'Question mentions "rarely accessed but must retrieve in milliseconds" → Glacier Instant. "Archive for years, retrieval can wait" → Deep Archive. "Unknown access pattern" → Intelligent-Tiering.',
+    tags: ['s3', 'storage', 'lifecycle'],
+    difficulty: 'beginner',
+  }),
+
+  rfc({
+    id: 'ccp-rfc-007',
+    certId: C,
+    domainId: 'ccp-concepts',
+    objectiveId: 'ccp-obj-shared-resp',
+    term: 'Well-Architected Framework Pillars',
+    definition: 'Six pillars: Operational Excellence (run and monitor systems), Security (protect data and systems), Reliability (recover from failure), Performance Efficiency (use resources efficiently), Cost Optimization (avoid unnecessary spend), Sustainability (minimize environmental impact — added 2021).',
+    whyItMatters: 'AWS frames every architecture review around these pillars. Many CCP questions are "which pillar does this practice support?" The framework is also a real-world checklist for any cloud build.',
+    memoryHook: 'Six pillars: "OS Reliability Performs Cost-Saving Securely Sustainably" — O.R.P.C.S.S. Or memorable phrase: "Operate Reliably, Perform Cheaply, Securely, Sustainably."',
+    commonTrap: 'Forgetting Sustainability. Older study materials list five pillars; the current exam tests six. Sustainability covers carbon-aware region choice, right-sizing, managed-service efficiency.',
+    example: 'A team adds Auto Scaling to handle bursty traffic. That\'s Performance Efficiency (right resources at right time) AND Cost Optimization (only pay for what you need) AND Reliability (handles spikes). One change can hit multiple pillars.',
+    examAngle: 'Memorize the six pillar names exactly as AWS uses them. The exam will list practices and ask which pillar they support. Multiple correct answers are common — pick the BEST fit.',
+    tags: ['well-architected', 'design-principles'],
+    difficulty: 'beginner',
+  }),
+
+  rfc({
+    id: 'ccp-rfc-008',
+    certId: C,
+    domainId: 'ccp-tech',
+    objectiveId: 'ccp-obj-core-services',
+    term: 'Compute Service Selection: EC2 vs Lambda vs Fargate',
+    definition: 'EC2: virtual machines you manage (OS, patches, scaling). Persistent. Lambda: serverless functions, runs on demand, max 15-min execution, no servers to manage, billed per invocation + duration. Fargate: serverless containers, you provide the container, AWS runs it without you provisioning EC2 hosts.',
+    whyItMatters: 'Service selection drives architecture, cost, and operational overhead. CCP questions framed as "best service for X workload" are common; matching workload to compute is the reasoning.',
+    memoryHook: 'EC2 = "you bring the server." Lambda = "you bring a function, AWS brings everything else, 15 minutes max." Fargate = "you bring a container, AWS brings the host."',
+    commonTrap: 'Picking Lambda for long-running workloads. The 15-minute max execution limit is hard. Anything longer needs Fargate or EC2 (or Step Functions for orchestration).',
+    example: 'An image-thumbnail generator triggered by S3 uploads — Lambda (event-driven, short duration). A 24/7 web app with steady traffic — EC2 with Auto Scaling, or Fargate. A long-running batch ML training job — EC2 with the right instance type.',
+    examAngle: 'Question says "no servers to manage" → Lambda or Fargate. "Event-driven, short execution" → Lambda. "Container-based, no host management" → Fargate. "Full OS control" → EC2.',
+    tags: ['compute', 'ec2', 'lambda', 'fargate'],
+    difficulty: 'beginner',
+  }),
+
+  rfc({
+    id: 'ccp-rfc-009',
+    certId: C,
+    domainId: 'ccp-billing',
+    objectiveId: 'ccp-obj-pricing',
+    term: 'AWS Cost Management Tools',
+    definition: 'AWS Cost Explorer: visualizes cost and usage trends, forecasts. AWS Budgets: alerts when spend or usage crosses a threshold (budget can be cost, usage, RI/SP coverage, RI/SP utilization). AWS Cost and Usage Report (CUR): granular CSV/Parquet billing data to S3 for analysis. AWS Pricing Calculator: estimates costs of a planned architecture before deploying.',
+    whyItMatters: 'Visibility is the prerequisite for cost control. Knowing which tool answers which question prevents both runaway bills and decision paralysis.',
+    memoryHook: '"Plan with Calculator. Track with Cost Explorer. Alert with Budgets. Audit with CUR." Four tools, four phases of cost management.',
+    commonTrap: 'Confusing Cost Explorer with Budgets. Cost Explorer shows what already happened (visualization). Budgets sets a threshold and alerts when it\'s breached.',
+    example: 'A new team is deploying a workload. Step 1: Pricing Calculator to estimate $/month. Step 2: AWS Budget set at 110% of estimate, alerts to email. Step 3: weekly Cost Explorer review by the team lead. Step 4: monthly CUR export to BI tool for finance.',
+    examAngle: 'Question asks "estimate cost BEFORE deploying" → Pricing Calculator. "Alert when spend exceeds X" → Budgets. "View past 6 months of trend" → Cost Explorer. "Detailed line items for chargeback" → CUR.',
+    tags: ['billing', 'cost-management'],
+    difficulty: 'beginner',
+  }),
+
+  rfc({
+    id: 'ccp-rfc-010',
+    certId: C,
+    domainId: 'ccp-concepts',
+    objectiveId: 'ccp-obj-shared-resp',
+    term: 'AWS Cloud Adoption Framework (AWS CAF)',
+    definition: 'A guidance framework with six perspectives for cloud transformation: Business (value), People (skills/culture), Governance (risk/compliance), Platform (architecture/engineering), Security (control/protect), Operations (run reliably). Each perspective has specific capabilities and outcomes.',
+    whyItMatters: 'CLF-C02 added AWS CAF as a new task statement. Migration questions on the exam now expect CAF awareness. Real-world: it\'s the structure most enterprise migrations are planned around.',
+    memoryHook: 'Six perspectives: "Business People Govern Platforms Securely + Operationally" — B.P.G.P.S.O. The two "P" perspectives are Platform (tech) and People (humans).',
+    commonTrap: 'Treating CAF as purely technical. Half the perspectives (Business, People, Governance) are non-technical — and that\'s the point. Cloud transformation succeeds or fails on people and process more than tech.',
+    example: 'A company plans to migrate from on-prem to AWS. Business perspective: define the value (cost reduction, agility). People: train staff, hire cloud roles. Governance: define landing zone and guardrails. Platform: design VPC architecture. Security: IAM, encryption, monitoring. Operations: monitoring, runbooks.',
+    examAngle: 'When the question mentions "framework for migration" or lists capability perspectives, the answer is AWS CAF. Don\'t confuse with Well-Architected (architecture review) or 7 Rs (migration strategies).',
+    tags: ['caf', 'migration', 'framework'],
+    difficulty: 'beginner',
+  }),
+];

@@ -1,0 +1,32 @@
+{
+  "name": "certquest-os",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "mobile": "pnpm --filter mobile dev",
+    "web": "pnpm --filter web dev",
+    "validate": "tsx scripts/validate-content.ts",
+    "db:push": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:seed": "tsx supabase/seed/seed.ts",
+    "db:types": "supabase gen types typescript --local > packages/db/src/database.types.ts"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "prettier": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "neverBuiltDependencies": ["react-native-screens"]
+  }
+}
