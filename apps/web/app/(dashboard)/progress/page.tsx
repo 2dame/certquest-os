@@ -29,7 +29,7 @@ function buildStudyDays(
   examAttempts.forEach((e) => tally(e.takenAt));
   const days: DayCell[] = [];
   const today = new Date();
-  for (let i = 29; i >= 0; i--) {
+  for (let i = 83; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     const key = d.toISOString().slice(0, 10);
@@ -73,7 +73,7 @@ function StreakCalendar({ days }: { days: DayCell[] }) {
         ))}
       </div>
       <div className="flex items-center justify-between mt-4">
-        <span className="text-textMuted text-[10px] tracking-widest">30 days ago</span>
+        <span className="text-textMuted text-[10px] tracking-widest">12 weeks ago</span>
         <div className="flex gap-1 items-center">
           {[0, 0.3, 0.6, 1].map((v, i) => (
             <div key={i} className="w-4 h-4" style={{ backgroundColor: heatColor(v) }} />
@@ -118,13 +118,23 @@ export default function ProgressPage() {
   }
 
   const studyDays = buildStudyDays(completedLessons, flashcardReviews, quizAttempts, bossAttempts, examAttempts);
+  const totalActivities = studyDays.reduce((s, d) => s + d.events, 0);
+  const activeDays = studyDays.filter((d) => d.events > 0).length;
 
   return (
     <div className="space-y-10 pb-16">
       {/* ── Page title ── */}
-      <div>
-        <p className="text-gold text-[10px] tracking-[0.3em] uppercase mb-1">Progress</p>
-        <h1 className="font-serif text-4xl text-text">Your training record</h1>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-gold text-[10px] tracking-[0.3em] uppercase mb-1">Progress</p>
+          <h1 className="font-serif text-4xl text-text">Your training record</h1>
+        </div>
+        <button
+          onClick={() => window.print()}
+          className="border border-border text-textMuted text-xs px-4 py-2 hover:border-gold hover:text-gold transition-colors print:hidden"
+        >
+          Print Report
+        </button>
       </div>
 
       {/* ── XP / Rank / Streak ── */}
@@ -307,11 +317,14 @@ export default function ProgressPage() {
         </div>
       </section>
 
-      {/* ── 30-day study calendar ── */}
+      {/* ── 12-week study calendar ── */}
       <section>
-        <h2 className="text-text text-[11px] tracking-[0.2em] uppercase font-semibold mb-4">
-          30-Day Study Calendar
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-text text-[11px] tracking-[0.2em] uppercase font-semibold">
+            12-Week Study Calendar
+          </h2>
+          <p className="text-textMuted text-xs">{activeDays} active days · {totalActivities} total activities</p>
+        </div>
         <StreakCalendar days={studyDays} />
       </section>
 

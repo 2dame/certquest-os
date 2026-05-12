@@ -2,6 +2,7 @@
 
 import { useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { certPacks, getCertLore, getRegionForDomain, certDisplayOrder } from '@certquest/content';
 import { generateTodayPlan, type PlanTask } from '@certquest/scheduler';
 import { rankForXp } from '@certquest/gamification';
@@ -17,6 +18,7 @@ const KIND_COLOR: Record<PlanTask['kind'], string> = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const activeCertId = useStore((s) => s.activeCertId);
   const setActiveCert = useStore((s) => s.setActiveCert);
   const settings = useStore((s) => s.settings);
@@ -57,6 +59,20 @@ export default function DashboardPage() {
       currentRegion: region ? { regionName: region.regionName, threat: region.threat } : undefined,
     });
   }, [activeCertId, settings.studyIntensity, completedLessons, bossAttempts, examAttempts, objectiveMastery, readiness]);
+
+  // Keyboard shortcuts: 1-9 jump to nth task — declared after plan
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'SELECT') return;
+      const n = parseInt(e.key, 10);
+      if (n >= 1 && n <= 9) {
+        const task = plan?.tasks[n - 1];
+        if (task) router.push(task.routeHint as string);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [plan, router]);
 
   if (!pack || !lore || !plan) return <div className="text-textMuted p-10">Loading...</div>;
 
@@ -145,8 +161,11 @@ export default function DashboardPage() {
               <p className="text-textMuted text-sm italic p-4 border border-border">Nothing scheduled. Adjust intensity in Settings.</p>
             ) : (
               <div className="space-y-1">
-                {plan.tasks.map((task) => (
+                {plan.tasks.map((task, ti) => (
                   <Link key={`${task.kind}-${task.id}`} href={task.routeHint as string} className="flex items-center gap-4 p-3 border border-border bg-bgCard hover:border-gold hover:bg-bgElevated transition group">
+                    {ti < 9 && (
+                      <kbd className="text-textDim text-[10px] font-mono border border-border/50 px-1 shrink-0 hidden group-hover:block">{ti + 1}</kbd>
+                    )}
                     <span className={`text-[10px] font-bold w-10 shrink-0 ${KIND_COLOR[task.kind]}`}>{KIND_LABEL[task.kind]}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-text text-sm font-semibold truncate">{task.title}</p>
