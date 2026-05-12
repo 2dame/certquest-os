@@ -130,10 +130,10 @@ importers:
         specifier: workspace:*
         version: link:../../packages/types
       '@supabase/ssr':
-        specifier: ^0.4.0
+        specifier: ^0.4.1
         version: 0.4.1(@supabase/supabase-js@2.105.4)
       '@supabase/supabase-js':
-        specifier: ^2.45.0
+        specifier: ^2.105.4
         version: 2.105.4
       '@tanstack/react-query':
         specifier: ^5.45.0
