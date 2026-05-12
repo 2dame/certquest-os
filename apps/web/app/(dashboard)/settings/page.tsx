@@ -31,6 +31,59 @@ function SectionCard({ children }: { children: React.ReactNode }) {
   );
 }
 
+function NotificationToggle() {
+  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
+
+  useEffect(() => {
+    if (!('Notification' in window)) {
+      setPermission('unsupported');
+    } else {
+      setPermission(Notification.permission);
+    }
+  }, []);
+
+  async function requestPermission() {
+    if (!('Notification' in window)) return;
+    const result = await Notification.requestPermission();
+    setPermission(result);
+    if (result === 'granted') {
+      new Notification('CertQuest OS', { body: 'Notifications enabled. We\'ll remind you to keep your streak!' });
+    }
+  }
+
+  if (permission === 'unsupported') {
+    return <p className="text-textMuted text-xs">Notifications are not supported in this browser.</p>;
+  }
+
+  return (
+    <div className="flex items-center justify-between pt-1">
+      <div>
+        <p className="text-text text-sm font-semibold">
+          {permission === 'granted' ? 'Notifications enabled' : permission === 'denied' ? 'Notifications blocked' : 'Notifications off'}
+        </p>
+        <p className="text-textMuted text-xs mt-0.5">
+          {permission === 'granted'
+            ? 'You\'ll receive streak reminders from this app.'
+            : permission === 'denied'
+            ? 'Blocked in browser. Update permissions in browser settings.'
+            : 'Enable to receive streak and study reminders.'}
+        </p>
+      </div>
+      {permission !== 'denied' && permission !== 'granted' && (
+        <button
+          onClick={requestPermission}
+          className="border border-gold text-gold text-xs font-bold tracking-widest px-5 py-2 hover:bg-gold/10 transition-colors shrink-0 ml-4"
+        >
+          ENABLE
+        </button>
+      )}
+      {permission === 'granted' && (
+        <span className="text-gold text-xs font-bold tracking-widest shrink-0 ml-4">ACTIVE</span>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
@@ -207,6 +260,17 @@ export default function SettingsPage() {
               );
             })}
           </div>
+        </SectionCard>
+      </section>
+
+      {/* ── Notifications ── */}
+      <section>
+        <SectionLabel>Notifications</SectionLabel>
+        <SectionCard>
+          <p className="text-textMuted text-xs leading-relaxed">
+            Browser notifications for streak reminders and study session prompts. Only shown when the app is open.
+          </p>
+          <NotificationToggle />
         </SectionCard>
       </section>
 

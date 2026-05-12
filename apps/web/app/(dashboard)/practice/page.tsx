@@ -9,6 +9,20 @@ export default function PracticeIndexPage() {
         <h1 className="font-serif text-4xl">Practice</h1>
         <p className="text-textMuted mt-2">Quick quizzes and practice exam blueprints across all cert paths.</p>
       </div>
+
+      {/* Mixed quiz CTA */}
+      <Link
+        href="/quiz/mixed"
+        className="flex items-center justify-between p-4 border-2 border-gold bg-bgCard hover:bg-bgElevated transition group"
+      >
+        <div>
+          <p className="text-gold text-[10px] tracking-widest uppercase">Multi-Cert Mix</p>
+          <p className="text-text font-semibold mt-1">Mixed Study Session</p>
+          <p className="text-textMuted text-xs mt-0.5">Draw questions from multiple certs in one 15-question session</p>
+        </div>
+        <span className="text-gold text-xl group-hover:translate-x-1 transition-transform">→</span>
+      </Link>
+
       <div className="grid gap-4">
         {certDisplayOrder.map((cid) => {
           const pack = certPacks[cid]!;

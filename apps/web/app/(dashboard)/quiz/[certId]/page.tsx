@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { certPacks, getCertLore } from '@certquest/content';
 import { useStore } from '@/lib/store';
@@ -22,6 +22,8 @@ function sameSet(a: string[], b: string[]) {
 export default function QuizPage() {
   const { certId } = useParams<{ certId: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const domainFocus = searchParams.get('domainFocus');
 
   const pack = certPacks[certId ?? ''];
   const lore = getCertLore(certId ?? '');
@@ -29,9 +31,18 @@ export default function QuizPage() {
   const addXp = useStore((s) => s.addXp);
   const recomputeReadiness = useStore((s) => s.recomputeReadinessForCert);
 
-  // Build a domain-weighted 10-question set once
+  const FOCUSED_SIZE = 5;
+  const effectiveSize = domainFocus ? FOCUSED_SIZE : QUIZ_SIZE;
+
+  // Build a domain-weighted question set (or focused domain set)
   const questions = useMemo(() => {
     if (!pack) return [];
+    if (domainFocus) {
+      return [...pack.questionBank]
+        .filter((q) => q.domainId === domainFocus)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, FOCUSED_SIZE);
+    }
     const bank = [...pack.questionBank].sort(() => Math.random() - 0.5);
     const perDomain: Record<string, typeof bank> = {};
     for (const q of bank) {
@@ -44,7 +55,7 @@ export default function QuizPage() {
       picks.push(...(perDomain[domain.id] ?? []).slice(0, share));
     }
     return picks.slice(0, QUIZ_SIZE).sort(() => Math.random() - 0.5);
-  }, [pack]);
+  }, [pack, domainFocus]);
 
   const [phase, setPhase] = useState<Phase>('intro');
   const [idx, setIdx] = useState(0);
@@ -138,8 +149,12 @@ export default function QuizPage() {
       <div className="max-w-xl mx-auto py-12 px-4 space-y-6">
         <div>
           <p className="text-gold text-[10px] tracking-[0.3em] uppercase mb-1">{lore.worldName}</p>
-          <h1 className="font-serif text-4xl">{pack.meta.examCode} — Quick Quiz</h1>
-          <p className="text-textMuted text-sm mt-2">{QUIZ_SIZE} questions · immediate feedback · no time limit</p>
+          <h1 className="font-serif text-4xl">
+            {domainFocus
+              ? `${pack.domains.find((d) => d.id === domainFocus)?.title ?? 'Domain'} Drill`
+              : `${pack.meta.examCode} — Quick Quiz`}
+          </h1>
+          <p className="text-textMuted text-sm mt-2">{effectiveSize} questions · immediate feedback · no time limit</p>
         </div>
         <div className="border border-border bg-bgCard p-5 space-y-2">
           <p className="text-gold text-[10px] tracking-widest uppercase mb-3">How it works</p>
@@ -223,6 +238,42 @@ export default function QuizPage() {
             </div>
           </div>
         )}
+
+        {/* Weak domain auto-queue */}
+        {(() => {
+          const weakDomains = pack.domains.filter((d) => {
+            const domQ = results.filter((r) => r.domainId === d.id);
+            if (domQ.length === 0) return false;
+            const domPct = Math.round((domQ.filter((r) => r.correct).length / domQ.length) * 100);
+            return domPct < 60;
+          });
+          if (weakDomains.length === 0) return null;
+          return (
+            <div className="border border-orange-800 bg-orange-950/20 p-4 space-y-3">
+              <p className="text-orange-400 text-[10px] tracking-widest uppercase font-semibold">Weak Domain Detected</p>
+              <div className="space-y-2">
+                {weakDomains.map((d) => {
+                  const domQ = results.filter((r) => r.domainId === d.id);
+                  const domPct = Math.round((domQ.filter((r) => r.correct).length / domQ.length) * 100);
+                  return (
+                    <div key={d.id} className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-text text-sm font-semibold">{d.title}</p>
+                        <p className="text-textMuted text-xs">{domPct}% — needs work</p>
+                      </div>
+                      <Link
+                        href={`/quiz/${certId}?domainFocus=${d.id}`}
+                        className="border border-orange-700 text-orange-400 text-xs font-bold tracking-widest px-4 py-1.5 hover:bg-orange-950/40 transition-colors shrink-0"
+                      >
+                        DRILL 5 MORE →
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="flex gap-3">
           <Link href="/dashboard" className="bg-gold text-bg font-bold tracking-widest text-sm px-6 py-3 hover:opacity-90 transition-opacity">

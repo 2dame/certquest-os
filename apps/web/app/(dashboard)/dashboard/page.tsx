@@ -104,11 +104,18 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-5 gap-3">
         <StatCard label="Readiness" value={`${overall}%`} sub={overall >= 80 ? 'Exam ready' : `Need ${80 - overall}% more`} highlight={overall >= 80} />
         <StatCard label="XP" value={xp.toLocaleString()} sub={`Rank: ${rank}`} />
         <StatCard label="Streak" value={`${streak.current}d`} sub={`Best: ${streak.longest}d`} />
         <StatCard label="Intensity" value={settings.studyIntensity.toUpperCase()} sub={`~${plan.estimatedMinutes} min today`} />
+        {(() => {
+          const examDate = settings.examDates[activeCertId];
+          if (!examDate) return <StatCard label="Exam Date" value="—" sub="Set in Settings" />;
+          const daysLeft = Math.ceil((new Date(examDate).getTime() - Date.now()) / 86400000);
+          if (daysLeft < 0) return <StatCard label="Exam Date" value="Past" sub={examDate} />;
+          return <StatCard label="Exam In" value={`${daysLeft}d`} sub={examDate} highlight={daysLeft <= 14} />;
+        })()}
       </div>
 
       {/* Mentor message */}
