@@ -2,7 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body { background: #0B0B10; color: #F5F1E6; }
-body { font-family: Manrope, system-ui, sans-serif; }
+/* Dark theme (default) */
+:root {
+  --color-bg: 11 11 16;
+  --color-bg-elevated: 21 21 29;
+  --color-bg-card: 27 27 38;
+  --color-border: 42 42 56;
+  --color-text: 245 241 230;
+  --color-text-muted: 168 162 178;
+  --color-text-dim: 107 104 120;
+  --color-gold: 229 201 123;
+  --color-oxblood: 122 31 44;
+  --color-danger: 220 38 38;
+}
 
-/* Cormorant Garamond + Manrope assumed loaded via the page <head>. */
+/* Light "parchment" theme */
+.light {
+  --color-bg: 248 245 239;
+  --color-bg-elevated: 239 235 227;
+  --color-bg-card: 229 224 215;
+  --color-border: 196 185 170;
+  --color-text: 28 24 20;
+  --color-text-muted: 99 93 86;
+  --color-text-dim: 154 144 136;
+  --color-gold: 155 116 32;
+  --color-oxblood: 122 31 44;
+  --color-danger: 185 28 28;
+}
+
+html, body { background: rgb(var(--color-bg)); color: rgb(var(--color-text)); }
+body { font-family: Manrope, system-ui, sans-serif; }

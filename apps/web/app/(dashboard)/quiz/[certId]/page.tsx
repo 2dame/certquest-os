@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { certPacks, getCertLore } from '@certquest/content';
 import { useStore } from '@/lib/store';
+import { useTts } from '@/lib/useTts';
 
 type Phase = 'intro' | 'question' | 'feedback' | 'done';
 
@@ -27,35 +28,61 @@ export default function QuizPage() {
 
   const pack = certPacks[certId ?? ''];
   const lore = getCertLore(certId ?? '');
+  const { speak, stop } = useTts();
   const recordQuizAttempt = useStore((s) => s.recordQuizAttempt);
   const addXp = useStore((s) => s.addXp);
   const recomputeReadiness = useStore((s) => s.recomputeReadinessForCert);
+  const wrongAnswerLog = useStore((s) => s.wrongAnswerLog);
+  const settingsDomainFocus = useStore((s) => s.settings.domainFocus);
 
   const FOCUSED_SIZE = 5;
   const effectiveSize = domainFocus ? FOCUSED_SIZE : QUIZ_SIZE;
 
-  // Build a domain-weighted question set (or focused domain set)
+  // Build a domain-weighted question set with adaptive difficulty + domain focus
   const questions = useMemo(() => {
     if (!pack) return [];
+
+    // Single-domain drill (from URL param)
     if (domainFocus) {
       return [...pack.questionBank]
         .filter((q) => q.domainId === domainFocus)
         .sort(() => Math.random() - 0.5)
         .slice(0, FOCUSED_SIZE);
     }
-    const bank = [...pack.questionBank].sort(() => Math.random() - 0.5);
+
+    // Compute adaptive struggle score per question (based on wrong answer history)
+    const getStruggleScore = (qId: string) => {
+      const key = `${certId}:${qId}`;
+      const entry = wrongAnswerLog[key];
+      if (!entry) return 0;
+      return entry.timesWrong / (entry.timesWrong + entry.timesCorrect + 1);
+    };
+
+    const focusedDomains = settingsDomainFocus[certId ?? ''] ?? [];
+    const bank = [...pack.questionBank];
     const perDomain: Record<string, typeof bank> = {};
     for (const q of bank) {
       (perDomain[q.domainId] ??= []).push(q);
     }
+
     const picks: typeof bank = [];
     const totalWeight = pack.domains.reduce((s, d) => s + (d.weight ?? 0), 0);
     for (const domain of pack.domains) {
-      const share = Math.max(1, Math.round(((domain.weight ?? 0) / totalWeight) * QUIZ_SIZE));
-      picks.push(...(perDomain[domain.id] ?? []).slice(0, share));
+      const isFocused = focusedDomains.includes(domain.id);
+      const effectiveWeight = isFocused ? (domain.weight ?? 0) * 2 : (domain.weight ?? 0);
+      const share = Math.max(1, Math.round((effectiveWeight / (totalWeight + focusedDomains.length * totalWeight)) * QUIZ_SIZE));
+      const domainQuestions = (perDomain[domain.id] ?? [])
+        // Adaptive: sort so struggled questions come first, then shuffle rest
+        .sort((a, b) => {
+          const sa = getStruggleScore(a.id);
+          const sb = getStruggleScore(b.id);
+          if (Math.abs(sa - sb) > 0.1) return sb - sa; // higher struggle first
+          return Math.random() - 0.5;
+        });
+      picks.push(...domainQuestions.slice(0, share));
     }
     return picks.slice(0, QUIZ_SIZE).sort(() => Math.random() - 0.5);
-  }, [pack, domainFocus]);
+  }, [pack, domainFocus, wrongAnswerLog, settingsDomainFocus, certId]);
 
   const [phase, setPhase] = useState<Phase>('intro');
   const [idx, setIdx] = useState(0);
@@ -88,6 +115,7 @@ export default function QuizPage() {
   }, [q, selected, addXp]);
 
   function advance() {
+    stop();
     setSelected([]);
     if (idx < questions.length - 1) {
       setIdx((i) => i + 1);
@@ -320,6 +348,7 @@ export default function QuizPage() {
         <div className="border border-border bg-bgCard p-6">
           {isMulti && <p className="text-gold text-[10px] tracking-widest uppercase mb-3">Choose all that apply</p>}
           <p className="text-text text-lg leading-relaxed font-serif">{q.questionText}</p>
+          <button onClick={() => speak(q.questionText)} className="text-textDim hover:text-gold transition-colors text-xs mt-2">▶ read aloud</button>
         </div>
 
         {/* Choices */}

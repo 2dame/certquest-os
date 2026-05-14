@@ -12,6 +12,7 @@ const NAV = [
   { href: '/progress', label: 'Progress' },
   { href: '/proof', label: 'Proof' },
   { href: '/glossary', label: 'Reference' },
+  { href: '/leaderboard', label: 'Leaderboard' },
   { href: '/settings', label: 'Settings' },
 ];
 

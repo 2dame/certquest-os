@@ -263,6 +263,68 @@ export default function SettingsPage() {
         </SectionCard>
       </section>
 
+      {/* ── Appearance ── */}
+      <section>
+        <SectionLabel>Appearance</SectionLabel>
+        <SectionCard>
+          <p className="text-textMuted text-xs leading-relaxed">Switch between the dark tactical theme and a light parchment theme.</p>
+          <div className="flex gap-3 pt-1">
+            {(['dark', 'light'] as const).map((t) => {
+              const isActive = settings.theme === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => updateSettings({ theme: t })}
+                  className={`border px-6 py-3 text-sm font-bold tracking-widest uppercase transition-colors ${isActive ? 'border-gold text-gold' : 'border-border text-textMuted hover:border-textMuted'}`}
+                >
+                  {t === 'dark' ? '◑ Dark' : '◐ Light'}
+                </button>
+              );
+            })}
+          </div>
+        </SectionCard>
+      </section>
+
+      {/* ── Domain Focus Plan ── */}
+      <section>
+        <SectionLabel>Custom Focus Plan</SectionLabel>
+        <SectionCard>
+          <p className="text-textMuted text-xs leading-relaxed">
+            Pin specific domains to drill harder on. Focused domains get 2× question weight in quizzes.
+          </p>
+          <div className="space-y-4 pt-1">
+            {certDisplayOrder.map((cid) => {
+              const p = certPacks[cid]!;
+              const focusedIds = settings.domainFocus[cid] ?? [];
+              return (
+                <div key={cid} className="border border-border p-4 bg-bg">
+                  <p className="text-text text-xs font-bold tracking-widest uppercase mb-3">{p.meta.examCode}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {p.domains.map((d) => {
+                      const focused = focusedIds.includes(d.id);
+                      return (
+                        <button
+                          key={d.id}
+                          onClick={() => {
+                            const next = focused
+                              ? focusedIds.filter((x) => x !== d.id)
+                              : [...focusedIds, d.id];
+                            updateSettings({ domainFocus: { ...settings.domainFocus, [cid]: next } });
+                          }}
+                          className={`border px-3 py-1.5 text-xs transition-colors ${focused ? 'border-gold text-gold bg-gold/5' : 'border-border text-textMuted hover:border-textMuted'}`}
+                        >
+                          {focused ? '★ ' : ''}{d.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </SectionCard>
+      </section>
+
       {/* ── Notifications ── */}
       <section>
         <SectionLabel>Notifications</SectionLabel>

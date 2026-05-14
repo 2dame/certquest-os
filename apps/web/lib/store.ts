@@ -66,6 +66,8 @@ export interface Settings {
   studyIntensity: 'chill' | 'normal' | 'aggressive';
   notificationsEnabled: boolean;
   examDates: Record<string, string>;
+  theme: 'dark' | 'light';
+  domainFocus: Record<string, string[]>;
 }
 interface DueFlashcard { flashcardId: string; certId: string; nextDue: string; ease: number; interval: number; }
 
@@ -125,7 +127,7 @@ interface StoreState {
   resetProgress: () => void;
 }
 
-const INITIAL_SETTINGS: Settings = { studyIntensity: 'normal', notificationsEnabled: false, examDates: {} };
+const INITIAL_SETTINGS: Settings = { studyIntensity: 'normal', notificationsEnabled: false, examDates: {}, theme: 'dark', domainFocus: {} };
 const INITIAL_STREAK: StreakState = { current: 0, longest: 0, lastStudyDate: null };
 
 function buildReadinessInputs(state: StoreState, certId: string): ReadinessInputs | null {

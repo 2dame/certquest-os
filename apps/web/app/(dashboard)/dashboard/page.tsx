@@ -118,6 +118,34 @@ export default function DashboardPage() {
         })()}
       </div>
 
+      {/* Pacing calculator */}
+      {(() => {
+        const examDate = settings.examDates[activeCertId];
+        if (!examDate || overall >= 80) return null;
+        const daysLeft = Math.ceil((new Date(examDate).getTime() - Date.now()) / 86400000);
+        if (daysLeft <= 0) return null;
+        const totalLessons = pack.lessons.length;
+        const completedCount = completedLessons.filter((c) => c.certId === activeCertId).length;
+        const readinessGap = Math.max(0, 80 - overall);
+        const estimatedLessonsNeeded = totalLessons > 0 ? Math.ceil((readinessGap / 80) * totalLessons) : 0;
+        const lessonsRemaining = Math.max(0, totalLessons - completedCount);
+        const lessonsToTarget = Math.min(estimatedLessonsNeeded, lessonsRemaining);
+        const lessonsPerDay = daysLeft > 0 ? Math.ceil(lessonsToTarget / daysLeft) : lessonsToTarget;
+        const isOnTrack = lessonsPerDay <= (settings.studyIntensity === 'chill' ? 1 : settings.studyIntensity === 'normal' ? 2 : 3);
+        return (
+          <div className={`border p-3 flex items-center gap-6 ${isOnTrack ? 'border-border bg-bgCard' : 'border-orange-800/60 bg-orange-950/20'}`}>
+            <span className={`text-[10px] tracking-widest uppercase font-semibold shrink-0 ${isOnTrack ? 'text-gold' : 'text-orange-400'}`}>Pacing</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-text text-sm">{daysLeft}d to exam · {lessonsToTarget} lessons to go · <span className="font-bold">{lessonsPerDay}/day needed</span></p>
+              <div className="h-1 bg-border mt-1.5">
+                <div className={`h-full transition-all ${isOnTrack ? 'bg-gold' : 'bg-orange-400'}`} style={{ width: `${Math.min(100, (completedCount / totalLessons) * 100)}%` }} />
+              </div>
+            </div>
+            <span className="text-textMuted text-xs shrink-0">{completedCount}/{totalLessons} done</span>
+          </div>
+        );
+      })()}
+
       {/* Mentor message */}
       {plan.mentorIntro && (
         <div className="border border-gold bg-bgCard p-4">

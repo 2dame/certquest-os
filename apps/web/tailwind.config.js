@@ -7,15 +7,16 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        bg: '#0B0B10',
-        bgElevated: '#15151D',
-        bgCard: '#1B1B26',
-        border: '#2A2A38',
-        text: '#F5F1E6',
-        textMuted: '#A8A2B2',
-        textDim: '#6B6878',
-        gold: '#E5C97B',
-        oxblood: '#7A1F2C',
+        bg: 'rgb(var(--color-bg) / <alpha-value>)',
+        bgElevated: 'rgb(var(--color-bg-elevated) / <alpha-value>)',
+        bgCard: 'rgb(var(--color-bg-card) / <alpha-value>)',
+        border: 'rgb(var(--color-border) / <alpha-value>)',
+        text: 'rgb(var(--color-text) / <alpha-value>)',
+        textMuted: 'rgb(var(--color-text-muted) / <alpha-value>)',
+        textDim: 'rgb(var(--color-text-dim) / <alpha-value>)',
+        gold: 'rgb(var(--color-gold) / <alpha-value>)',
+        oxblood: 'rgb(var(--color-oxblood) / <alpha-value>)',
+        danger: 'rgb(var(--color-danger) / <alpha-value>)',
       },
       fontFamily: {
         serif: ['"Cormorant Garamond"', 'serif'],
